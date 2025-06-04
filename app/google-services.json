@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "416513848900",
+    "project_id": "foodrecipe-fe611",
+    "storage_bucket": "foodrecipe-fe611.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416513848900:android:f4b62039ce1ebfd70bae11",
+        "android_client_info": {
+          "package_name": "com.anju.foodrecipe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8_FSDG1zRgc-FNKKfOsIeWZ6cSZDa3x8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
