@@ -21,19 +21,9 @@ fun AppNavigation(modifier: Modifier = Modifier, authViewModel: AuthViewModel) {
     val navController = rememberNavController()
     GlobalNavigation.navController = navController
 
-    NavHost(navController = navController, startDestination = firstScreen, builder = {
+    NavHost(navController = navController, startDestination = "auth", builder = {
         composable("auth") {
-            AuthScreen(modifier, navController, authViewModel)
-        }
-
-        composable("login") {
-            LoginScreen(modifier, navController, authViewModel)
-        }
-        composable("signup") {
-            SignUpScreen(modifier, navController, authViewModel)
-        }
-        composable("home") {
-            HomeScreen(modifier)
+            AuthScreen()
         }
 
     })

@@ -3,19 +3,23 @@ package com.anju.foodrecipe.registration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -30,49 +34,89 @@ import com.anju.foodrecipe.R
 import com.anju.foodrecipe.viewmodel.AuthViewModel
 
 @Composable
-fun AuthScreen(modifier: Modifier = Modifier,navController: NavController,authViewModel: AuthViewModel) {
+fun AuthScreen(
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(colorResource(id= R.color.authScreenBgColor))
-        .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+) {
 
-    ){
-        Image(painter = painterResource(R.drawable.register_banner),
-            contentDescription = "banner",
-            modifier = Modifier.fillMaxWidth()
-                .height(300.dp))
-
-        Spacer(modifier=Modifier.height(20.dp))
-        Text(text = "Start your shopping journey now.",
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.login_bg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Text(
+            text = "Later",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             style = TextStyle(
-                fontSize = 20.sp,
+                color = Color.White,
+                fontSize = 15.sp,
                 fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center
-
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End
             )
         )
 
-        Spacer(modifier=Modifier.height(20.dp))
-        Text(text = "Best ecom platform with best prices",
-            style = TextStyle(
-                textAlign = TextAlign.Center
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally
+
+        ) {
+
+            Text(
+                "Help your path to health goals with happiness",
+                style = TextStyle(
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
             )
-        )
-        Spacer(modifier=Modifier.height(25.dp))
-        Button(onClick = {
-            navController.navigate("login")
-        },modifier=Modifier.fillMaxWidth().height(60.dp)) {
-            Text("Login", fontSize = 20.sp)
-        }
 
-        Spacer(modifier=Modifier.height(30.dp))
-        TextButton(onClick = {navController.navigate("signup")}) {
-            Text("Don't have an account, sign up")
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
+            Button(
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorResource(id = R.color.ButtonPrimary)
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(
+                    modifier = Modifier.padding(8.dp),
+                    text = "Login",
+                    color = Color.White
+                )
+            }
+
+
+            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(onClick = {}) {
+                Text(
+                    "Create New Account",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+            }
+
+        }
     }
+
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    AuthScreen()
 }

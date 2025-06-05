@@ -8,4 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="authScreenBgColor">#3DA0A7</color>
+    <color name="ButtonPrimary">#042628</color>
 </resources>

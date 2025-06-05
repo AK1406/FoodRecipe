@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.anju.foodrecipe"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.anju.foodrecipe"
