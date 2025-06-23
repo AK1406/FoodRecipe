@@ -14,14 +14,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,8 +37,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anju.foodrecipe.R
+import com.anju.foodrecipe.model.FeaturedModel
 import com.anju.foodrecipe.registration.AuthScreen
 import kotlin.math.sign
+import androidx.compose.runtime.*
+import androidx.compose.ui.res.colorResource
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
@@ -70,6 +77,18 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.SemiBold
             )
         )
+        Spacer(modifier = Modifier.height(15.dp))
+        FeaturedList(modifier)
+        Spacer(modifier = Modifier.height(15.dp))
+        Text(
+            "Category",
+            style = TextStyle(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
+        Spacer(modifier = Modifier.height(15.dp))
+        Categories()
 
     }
 
@@ -77,10 +96,10 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
 
 @Composable
-fun FeaturedDishes(modifier: Modifier = Modifier) {
+fun FeaturedDishes(item: FeaturedModel) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
+        modifier = Modifier
+            .width(264.dp)
             .height(172.dp),
         shape = RoundedCornerShape(24.dp),
     ) {
@@ -103,7 +122,7 @@ fun FeaturedDishes(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     "Asian white noodle with extra seafood",
-                    modifier = Modifier.width(200.dp),
+                    modifier = Modifier.width(180.dp),
                     maxLines = 2,
                     style = TextStyle(
                         fontSize = 18.sp,
@@ -149,8 +168,55 @@ fun FeaturedDishes(modifier: Modifier = Modifier) {
 }
 
 
+@Composable
+fun FeaturedList(modifier: Modifier = Modifier) {
+    val featuredItems =
+        listOf<FeaturedModel>(
+            FeaturedModel("Asian white noodle with extra seafood", "James Spader", "20 mins"),
+            FeaturedModel("Asian white noodle with extra seafood", "Satya Spader", "15 mins"),
+            FeaturedModel("Asian white noodle with extra seafood", "Puhan Spader", "30 mins"),
+        )
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        items(featuredItems.size) { item ->
+            FeaturedDishes(featuredItems[item])
+        }
+
+
+    }
+}
+
+
+@Composable
+fun Categories() {
+    val categoryList = listOf<String>("Breakfast", "Lunch", "Snacks", "Dinner")
+    var selectedCat by remember { mutableStateOf(categoryList[0]) }
+    LazyRow(modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)){
+          items(categoryList.size){cat->
+              FilterChip(
+                  selected = selectedCat == categoryList[cat],
+                  onClick = { selectedCat = categoryList[cat] },
+                  label = { Text(categoryList[cat].toString()) },
+                  shape = RoundedCornerShape(16.dp),
+                  colors = FilterChipDefaults.filterChipColors(
+                      selectedContainerColor = colorResource(R.color.authScreenBgColor),
+                      selectedLabelColor = Color.White,
+                      containerColor = Color(0xFFE0E0E0),
+                      labelColor = Color.Black)
+              )
+          }
+    }
+}
+
+
+
+
 @Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
-    FeaturedDishes()
+    HomeScreen()
 }
