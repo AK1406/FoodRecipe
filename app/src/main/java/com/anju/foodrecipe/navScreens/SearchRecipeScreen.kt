@@ -289,7 +289,8 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(5.dp)
+                .padding(5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 painter = painterResource(R.drawable.egg), "Dish image",
