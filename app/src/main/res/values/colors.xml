@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="authScreenBgColor">#3DA0A7</color>
     <color name="ButtonPrimary">#042628</color>
+    <color name="light_grey">#97A2B0</color>
+    <color name="lightest_grey">#FEE5E7E9</color>
 </resources>
