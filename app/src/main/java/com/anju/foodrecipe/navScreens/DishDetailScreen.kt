@@ -65,7 +65,7 @@ import com.anju.foodrecipe.model.IngredientModel
 
 
 @Composable
-fun DishDetailScreen() {
+fun DishDetailScreen(modifier: Modifier=Modifier) {
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val sheetHeight = screenHeight * 0.75f
     val imageHeight = screenHeight * 0.5f

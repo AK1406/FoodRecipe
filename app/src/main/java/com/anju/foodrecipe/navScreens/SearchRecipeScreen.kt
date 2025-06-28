@@ -64,7 +64,7 @@ import com.anju.foodrecipe.model.PopularDishesModel
 fun SearchRecipeScreen(modifier: Modifier = Modifier) {
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(

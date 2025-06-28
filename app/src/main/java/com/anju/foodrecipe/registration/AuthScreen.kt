@@ -30,12 +30,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.anju.foodrecipe.GlobalNavigation
 import com.anju.foodrecipe.R
 import com.anju.foodrecipe.viewmodel.AuthViewModel
 
 @Composable
 fun AuthScreen(
-
+    modifier: Modifier = Modifier, navController: NavController, authViewModel: AuthViewModel?
 ) {
 
     Box(
@@ -86,7 +88,7 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {},
+                onClick = { navController.navigate("login") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(id = R.color.ButtonPrimary)
@@ -102,7 +104,7 @@ fun AuthScreen(
 
 
             Spacer(modifier = Modifier.height(16.dp))
-            TextButton(onClick = {}) {
+            TextButton(onClick = { navController.navigate("sign_up") }) {
                 Text(
                     "Create New Account",
                     color = Color.White,
@@ -117,6 +119,9 @@ fun AuthScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
-    AuthScreen()
+fun AuthScreenPreview() {
+    val navController = rememberNavController()
+    val modifier = Modifier
+
+    AuthScreen(modifier,navController, null)
 }

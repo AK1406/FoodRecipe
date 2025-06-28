@@ -51,7 +51,7 @@ import com.anju.foodrecipe.model.EditorChoiceDish
 import com.anju.foodrecipe.model.PopularDishesModel
 
 @Composable
-fun UserAccountScreen() {
+fun UserAccountScreen(modifier: Modifier= Modifier) {
 
     Column(
         modifier = Modifier
