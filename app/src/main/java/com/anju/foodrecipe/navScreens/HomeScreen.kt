@@ -1,8 +1,5 @@
 package com.anju.foodrecipe.navScreens
 
-import android.graphics.drawable.Icon
-import android.widget.Space
-import androidx.annotation.ColorRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
@@ -55,11 +51,33 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
+import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.PopularDishesModel
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
+    val categoryList = remember { mutableStateOf<List<Category>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        Firebase.firestore.collection("data").document("Dishes").collection("category")
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val resultList = it.result.documents.mapNotNull { doc ->
+                        doc.toObject(Category::class.java)
+                    }
+                    categoryList.value = resultList
+
+                }
+            }
+    }
+
+
+
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -135,7 +153,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             }
             Spacer(modifier = Modifier.height(15.dp))
-            Categories()
+            Categories(categoryList)
             Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -193,7 +211,7 @@ fun FeaturedDishes(item: FeaturedModel) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(140.dp)
-                    .offset(x = 25.dp, y = (-30).dp)
+                    .offset(x = 25.dp, y = (-40).dp)
                     .align(Alignment.TopEnd)
             )
 
@@ -259,9 +277,24 @@ fun FeaturedDishes(item: FeaturedModel) {
 @Composable
 fun FeaturedList(modifier: Modifier = Modifier) {
     val featuredItems = listOf(
-        FeaturedModel("Asian white noodle with extra seafood", "James Spader", "20 mins",R.drawable.white_noodles),
-        FeaturedModel("Asian white noodle with extra seafood", "Satya Spader", "15 mins",R.drawable.biryani),
-        FeaturedModel("Asian white noodle with extra seafood", "Puhan Spader", "30 mins",R.drawable.white_noodles),
+        FeaturedModel(
+            "Asian white noodle with extra seafood",
+            "James Spader",
+            "20 mins",
+            R.drawable.biryani
+        ),
+        FeaturedModel(
+            "Asian white noodle with extra seafood",
+            "Satya Spader",
+            "15 mins",
+            R.drawable.pizza
+        ),
+        FeaturedModel(
+            "Asian white noodle with extra seafood",
+            "Puhan Spader",
+            "30 mins",
+            R.drawable.white_noodles
+        ),
     )
 
     val listState = rememberLazyListState()
@@ -315,22 +348,30 @@ fun FeaturedList(modifier: Modifier = Modifier) {
 
 
 @Composable
-fun Categories() {
-    val categoryList = listOf<String>("Breakfast", "Lunch", "Snacks", "Dinner")
-    var selectedCat by remember { mutableStateOf(categoryList[0]) }
+fun Categories(foodCategoryList: MutableState<List<Category>>) {
+    val categoryList = foodCategoryList.value.map { it.name }
+    var selectedCat by remember { mutableStateOf(categoryList.firstOrNull() ?: "") }
+
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(categoryList.size) { cat ->
+        items(categoryList.size) { index ->
+            val categoryName = categoryList[index]
             FilterChip(
-                selected = selectedCat == categoryList[cat],
-                onClick = { selectedCat = categoryList[cat] },
+                selected = selectedCat == categoryName,
+                onClick = {
+                    if (categoryName != null) {
+                        selectedCat = categoryName
+                    }
+                },
                 label = {
-                    Text(
-                        text = categoryList[cat].toString(),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
-                    )
+                    if (categoryName != null) {
+                        Text(
+                            text = categoryName,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                        )
+                    }
                 },
                 shape = RoundedCornerShape(30.dp),
                 border = BorderStroke(0.dp, Color.Transparent),
