@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -45,6 +46,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -67,21 +69,41 @@ import com.anju.foodrecipe.model.IngredientModel
 @Composable
 fun DishDetailScreen(modifier: Modifier=Modifier) {
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val sheetHeight = screenHeight * 0.75f
-    val imageHeight = screenHeight * 0.5f
+
+    val imageHeight = 450.dp
+    val sheetOffset = 240.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Top Image occupying 1/4th of the screen
 
+        // Background image
         Image(
             painter = painterResource(R.drawable.dish_detail_bg),
             contentDescription = "Dish Image",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(imageHeight),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.FillBounds
         )
 
+
+        // White fade overlay from top
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.75f),
+                            Color.White.copy(alpha = 0.05f),
+                            Color.Transparent,
+                            Color.Transparent,
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        // Top icons on image
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,7 +112,7 @@ fun DishDetailScreen(modifier: Modifier=Modifier) {
         ) {
             Icon(
                 Icons.Default.Close,
-                contentDescription = "Favourite",
+                contentDescription = "Close",
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
@@ -100,7 +122,7 @@ fun DishDetailScreen(modifier: Modifier=Modifier) {
             Spacer(modifier = Modifier.weight(1f))
             Icon(
                 Icons.Outlined.FavoriteBorder,
-                contentDescription = "Close",
+                contentDescription = "Favorite",
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
@@ -109,25 +131,26 @@ fun DishDetailScreen(modifier: Modifier=Modifier) {
             )
         }
 
-        // Bottom sheet over image
+        // Bottom sheet that overlaps image
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(sheetHeight)
-                .align(Alignment.BottomCenter),
+                .align(Alignment.TopCenter)
+                .offset(y = sheetOffset),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             color = Color.White,
             tonalElevation = 8.dp
         ) {
-            // Scrollable content
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxHeight()
+                    .padding(16.dp)
             ) {
                 BottomSheetContent()
             }
         }
     }
+
 }
 
 

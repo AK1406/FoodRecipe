@@ -57,7 +57,7 @@ import com.anju.foodrecipe.model.PopularDishesModel
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
@@ -66,7 +66,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             )
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp, 16.dp, 0.dp, 0.dp)
                 .verticalScroll(rememberScrollState()),
