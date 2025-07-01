@@ -10,15 +10,18 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +56,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import com.anju.foodrecipe.model.PopularDishesModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
@@ -61,16 +65,20 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(Color.White, colorResource(R.color.lightest_grey)) // From top to bottom
+                    colors = listOf(
+                        Color.White,
+                        colorResource(R.color.lightest_grey)
+                    ) // From top to bottom
                 )
             )
     ) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(16.dp, 16.dp, 0.dp, 0.dp)
+                .padding(start = 16.dp, top = 10.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
+            //top header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -104,7 +112,10 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(15.dp))
             FeaturedList(modifier)
             Spacer(modifier = Modifier.height(15.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     "Category",
                     style = TextStyle(
@@ -126,7 +137,10 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(15.dp))
             Categories()
             Spacer(modifier = Modifier.height(20.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     "Popular Recipes",
                     style = TextStyle(
@@ -166,18 +180,29 @@ fun FeaturedDishes(item: FeaturedModel) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background Image
             Image(
-                painter = painterResource(R.drawable.card_bg),
+                painter = painterResource(R.drawable.card),
                 contentDescription = "card bg",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
+            )
+
+            // Dish Image positioned at top-right
+            Image(
+                painter = painterResource(item.dishImg),
+                contentDescription = "dish img",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(140.dp)
+                    .offset(x = 25.dp, y = (-30).dp)
+                    .align(Alignment.TopEnd)
             )
 
             // Content at bottom
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomStart) // Align column to bottom
-                    .padding(16.dp), // Optional padding
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
@@ -231,25 +256,60 @@ fun FeaturedDishes(item: FeaturedModel) {
     }
 }
 
-
 @Composable
 fun FeaturedList(modifier: Modifier = Modifier) {
-    val featuredItems =
-        listOf<FeaturedModel>(
-            FeaturedModel("Asian white noodle with extra seafood", "James Spader", "20 mins"),
-            FeaturedModel("Asian white noodle with extra seafood", "Satya Spader", "15 mins"),
-            FeaturedModel("Asian white noodle with extra seafood", "Puhan Spader", "30 mins"),
-        )
+    val featuredItems = listOf(
+        FeaturedModel("Asian white noodle with extra seafood", "James Spader", "20 mins",R.drawable.white_noodles),
+        FeaturedModel("Asian white noodle with extra seafood", "Satya Spader", "15 mins",R.drawable.biryani),
+        FeaturedModel("Asian white noodle with extra seafood", "Puhan Spader", "30 mins",R.drawable.white_noodles),
+    )
 
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        items(featuredItems.size) { item ->
-            FeaturedDishes(featuredItems[item])
+    val listState = rememberLazyListState()
+    var currentIndex by remember { mutableStateOf(0) }
+
+    // Auto-scroll effect
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            currentIndex = (currentIndex + 1) % featuredItems.size
+            listState.animateScrollToItem(currentIndex)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(featuredItems.size) { index ->
+                FeaturedDishes(featuredItems[index])
+            }
         }
 
-
+        // Dot Indicator
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(featuredItems.size) { index ->
+                val isSelected = currentIndex == index
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(if (isSelected) 10.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) Color.Black else Color.LightGray
+                        )
+                )
+            }
+        }
     }
 }
 
@@ -303,10 +363,12 @@ fun PopularDishes(item: PopularDishesModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(modifier = Modifier
-                .width(168.dp)
-                .height(128.dp)
-                .clip(RoundedCornerShape(16.dp))) {
+            Box(
+                modifier = Modifier
+                    .width(168.dp)
+                    .height(128.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
                 // Background Image
                 Image(
                     painter = painterResource(R.drawable.taco),
@@ -348,7 +410,8 @@ fun PopularDishes(item: PopularDishesModel) {
                 Image(
                     painter = painterResource(R.drawable.calories),
                     contentDescription = "total calories",
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier
+                        .size(14.dp)
                         .clip(RoundedCornerShape(16.dp))
                 )
                 Spacer(modifier = Modifier.width(5.dp))
@@ -369,7 +432,10 @@ fun PopularDishes(item: PopularDishesModel) {
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         "${item.cookTime}",
-                        style = TextStyle(fontSize = 12.sp, color = colorResource(R.color.light_grey))
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.light_grey)
+                        )
                     )
                 }
             }
