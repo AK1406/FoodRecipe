@@ -44,40 +44,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anju.foodrecipe.R
-import com.anju.foodrecipe.model.FeaturedModel
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import com.anju.foodrecipe.model.Category
+import com.anju.foodrecipe.model.FoodDish
 import com.anju.foodrecipe.model.PopularDishesModel
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.delay
+import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.anju.foodrecipe.viewmodel.DishesViewModel
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    val categoryList = remember { mutableStateOf<List<Category>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        Firebase.firestore.collection("data").document("Dishes").collection("category")
-            .get()
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val resultList = it.result.documents.mapNotNull { doc ->
-                        doc.toObject(Category::class.java)
-                    }
-                    categoryList.value = resultList
-
-                }
-            }
+fun HomeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
+    val categoryList = viewModel.categoryList
+    val featuredDishes = viewModel.foodDishList
+    println("featuredDishes : $featuredDishes")
+    LaunchedEffect(featuredDishes) {
+        println("UI sees featured dishes: ${featuredDishes.map { it.dishName }}")
     }
+    HomeScreenContent(categoryList, featuredDishes, modifier)
 
+}
 
-
-
+@Composable
+fun HomeScreenContent(
+    categoryList: List<Category>,
+    featuredList: List<FoodDish>,
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -128,7 +128,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 )
             )
             Spacer(modifier = Modifier.height(15.dp))
-            FeaturedList(modifier)
+            FeaturedList(featuredList)
             Spacer(modifier = Modifier.height(15.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -183,12 +183,11 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
 
     }
-
 }
 
 
 @Composable
-fun FeaturedDishes(item: FeaturedModel) {
+fun FeaturedDishes(item: FoodDish) {
     Card(
         modifier = Modifier
             .width(264.dp)
@@ -196,6 +195,22 @@ fun FeaturedDishes(item: FeaturedModel) {
         shape = RoundedCornerShape(24.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            val dishImg = rememberAsyncImagePainter(
+                ImageRequest.Builder(LocalContext.current)
+                    .data(item.dishImage)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .crossfade(true)
+                    .build()
+            )
+            val cookProfile = rememberAsyncImagePainter(
+                ImageRequest.Builder(LocalContext.current)
+                    .data(item.cookProfile)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .crossfade(true)
+                    .build()
+            )
             // Background Image
             Image(
                 painter = painterResource(R.drawable.card),
@@ -206,8 +221,8 @@ fun FeaturedDishes(item: FeaturedModel) {
 
             // Dish Image positioned at top-right
             Image(
-                painter = painterResource(item.dishImg),
-                contentDescription = "dish img",
+                painter = dishImg,
+                contentDescription = "${item.dishName}",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(140.dp)
@@ -224,7 +239,7 @@ fun FeaturedDishes(item: FeaturedModel) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    "Asian white noodle with extra seafood",
+                    "${item.desc}",
                     modifier = Modifier.width(180.dp),
                     maxLines = 2,
                     style = TextStyle(
@@ -240,7 +255,7 @@ fun FeaturedDishes(item: FeaturedModel) {
                 ) {
 
                     Image(
-                        painter = painterResource(R.drawable.avtar),
+                        painter = cookProfile,
                         contentDescription = "cook Image",
                         modifier = Modifier
                             .size(25.dp)
@@ -250,7 +265,7 @@ fun FeaturedDishes(item: FeaturedModel) {
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        "James Spader",
+                        item.cookName,
                         style = TextStyle(fontSize = 12.sp, color = Color.White)
                     )
 
@@ -264,7 +279,7 @@ fun FeaturedDishes(item: FeaturedModel) {
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            "20 mins",
+                            item.cookingTime,
                             style = TextStyle(fontSize = 12.sp, color = Color.White)
                         )
                     }
@@ -275,28 +290,8 @@ fun FeaturedDishes(item: FeaturedModel) {
 }
 
 @Composable
-fun FeaturedList(modifier: Modifier = Modifier) {
-    val featuredItems = listOf(
-        FeaturedModel(
-            "Asian white noodle with extra seafood",
-            "James Spader",
-            "20 mins",
-            R.drawable.biryani
-        ),
-        FeaturedModel(
-            "Asian white noodle with extra seafood",
-            "Satya Spader",
-            "15 mins",
-            R.drawable.pizza
-        ),
-        FeaturedModel(
-            "Asian white noodle with extra seafood",
-            "Puhan Spader",
-            "30 mins",
-            R.drawable.white_noodles
-        ),
-    )
-
+fun FeaturedList(foodDishList: List<FoodDish>) {
+    if (foodDishList.isEmpty()) return
     val listState = rememberLazyListState()
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -304,7 +299,7 @@ fun FeaturedList(modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            currentIndex = (currentIndex + 1) % featuredItems.size
+            currentIndex = (currentIndex + 1) % foodDishList.size
             listState.animateScrollToItem(currentIndex)
         }
     }
@@ -318,8 +313,8 @@ fun FeaturedList(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(featuredItems.size) { index ->
-                FeaturedDishes(featuredItems[index])
+            items(foodDishList.size) { index ->
+                FeaturedDishes(foodDishList[index])
             }
         }
 
@@ -330,7 +325,7 @@ fun FeaturedList(modifier: Modifier = Modifier) {
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            repeat(featuredItems.size) { index ->
+            repeat(foodDishList.size) { index ->
                 val isSelected = currentIndex == index
                 Box(
                     modifier = Modifier
@@ -348,8 +343,8 @@ fun FeaturedList(modifier: Modifier = Modifier) {
 
 
 @Composable
-fun Categories(foodCategoryList: MutableState<List<Category>>) {
-    val categoryList = foodCategoryList.value.map { it.name }
+fun Categories(foodCategoryList: List<Category>) {
+    val categoryList = foodCategoryList.map { it.name }
     var selectedCat by remember { mutableStateOf(categoryList.firstOrNull() ?: "") }
 
     LazyRow(
@@ -510,6 +505,21 @@ fun PopularDishList() {
 
 @Preview(showBackground = true)
 @Composable
-private fun HomeScreenPreview() {
-    HomeScreen()
+fun HomeScreenContentPreview() {
+    HomeScreenContent(
+        categoryList = listOf(Category(name = "Mock Cat")),
+        featuredList = listOf(
+            FoodDish(
+                "chinese",
+                "White Noodles",
+                "mock food dish description",
+                "",
+                "Anju Singh",
+               " R.drawable.avtar",
+                "20 mins",
+                true,
+                "breakfast"
+            )
+        )
+    )
 }

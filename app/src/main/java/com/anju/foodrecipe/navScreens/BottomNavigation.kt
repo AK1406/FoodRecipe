@@ -19,19 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,18 +34,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.anju.foodrecipe.R
-import com.anju.foodrecipe.model.NavItemModel
 import com.anju.foodrecipe.viewmodel.AuthViewModel
+import com.anju.foodrecipe.viewmodel.DishesViewModel
 
 @Composable
 fun BottomNavigation(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dishesViewModel: DishesViewModel
 ) {
     val navItems = listOf(
         Icons.Default.Home,
@@ -127,7 +119,8 @@ fun BottomNavigation(
     ) { paddingValues ->
         ContentScreen(
             modifier = modifier.padding(paddingValues),
-            selectedIdx = selectedItemIndex
+            selectedIdx = selectedItemIndex,
+            dishesViewModel
         )
     }
 }
@@ -137,10 +130,10 @@ fun BottomNavigation(
 
 @Composable
 fun ContentScreen(
-    modifier: Modifier = Modifier, selectedIdx: Int
+    modifier: Modifier = Modifier, selectedIdx: Int, dishesViewModel: DishesViewModel
 ) {
     when (selectedIdx) {
-        0 -> HomeScreen(modifier)
+        0 -> HomeScreen(modifier,dishesViewModel)
         1 -> SearchRecipeScreen(modifier)
         2 -> DishDetailScreen(modifier)
         3 -> UserAccountScreen(modifier)
@@ -152,5 +145,5 @@ fun ContentScreen(
 @Preview(showBackground = true)
 @Composable
 private fun DishDetailPreview() {
-    BottomNavigation()
+   // BottomNavigation(dishesViewModel = dishesViewModel)
 }
