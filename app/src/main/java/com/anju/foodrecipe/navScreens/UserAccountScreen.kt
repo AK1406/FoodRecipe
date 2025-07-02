@@ -54,7 +54,7 @@ import com.anju.foodrecipe.model.PopularDishesModel
 fun UserAccountScreen(modifier: Modifier= Modifier) {
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
