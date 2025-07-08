@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import coil.compose.AsyncImage
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.FoodDish
 import com.anju.foodrecipe.model.PopularDishesModel
@@ -59,6 +61,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.anju.foodrecipe.viewmodel.DishesViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
@@ -195,23 +198,9 @@ fun FeaturedDishes(item: FoodDish) {
         shape = RoundedCornerShape(24.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val dishImg = rememberAsyncImagePainter(
-                ImageRequest.Builder(LocalContext.current)
-                    .data(item.dishImage)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .crossfade(true)
-                    .build()
-            )
-            val cookProfile = rememberAsyncImagePainter(
-                ImageRequest.Builder(LocalContext.current)
-                    .data(item.cookProfile)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .crossfade(true)
-                    .build()
-            )
             // Background Image
+            val context = LocalContext.current
+
             Image(
                 painter = painterResource(R.drawable.card),
                 contentDescription = "card bg",
@@ -219,15 +208,23 @@ fun FeaturedDishes(item: FoodDish) {
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Dish Image positioned at top-right
-            Image(
-                painter = dishImg,
-                contentDescription = "${item.dishName}",
+            // Dish Image
+            AsyncImage(
+                model  = remember(item.dishImage) {
+                    ImageRequest.Builder(context)
+                        .data(item.dishImage)
+                        .crossfade(true)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .build()
+                },
+                contentDescription = item.dishName,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(140.dp)
                     .offset(x = 25.dp, y = (-40).dp)
-                    .align(Alignment.TopEnd)
+                    .align(Alignment.TopEnd),
+                placeholder = painterResource(R.drawable.white_noodles)
             )
 
             // Content at bottom
@@ -239,7 +236,7 @@ fun FeaturedDishes(item: FoodDish) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    "${item.desc}",
+                    text = item.desc,
                     modifier = Modifier.width(180.dp),
                     maxLines = 2,
                     style = TextStyle(
@@ -253,19 +250,22 @@ fun FeaturedDishes(item: FoodDish) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    Image(
-                        painter = cookProfile,
+                    // Cook profile image
+                    AsyncImage(
+                        model = item.cookProfile,
                         contentDescription = "cook Image",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(25.dp)
                             .clip(CircleShape)
                             .border(1.dp, Color.White, CircleShape),
-                        contentScale = ContentScale.Crop
+                        placeholder = painterResource(R.drawable.white_noodles)
                     )
+
                     Spacer(modifier = Modifier.width(5.dp))
+
                     Text(
-                        item.cookName,
+                        text = item.cookName,
                         style = TextStyle(fontSize = 12.sp, color = Color.White)
                     )
 
@@ -279,7 +279,7 @@ fun FeaturedDishes(item: FoodDish) {
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            item.cookingTime,
+                            text = item.cookingTime,
                             style = TextStyle(fontSize = 12.sp, color = Color.White)
                         )
                     }
@@ -289,18 +289,22 @@ fun FeaturedDishes(item: FoodDish) {
     }
 }
 
+
 @Composable
 fun FeaturedList(foodDishList: List<FoodDish>) {
     if (foodDishList.isEmpty()) return
+
     val listState = rememberLazyListState()
     var currentIndex by remember { mutableStateOf(0) }
 
-    // Auto-scroll effect
-    LaunchedEffect(Unit) {
+    LaunchedEffect(true) {
         while (true) {
-            delay(1000)
-            currentIndex = (currentIndex + 1) % foodDishList.size
-            listState.animateScrollToItem(currentIndex)
+            delay(2500)
+            // Only scroll when the user is not interacting
+            if (!listState.isScrollInProgress) {
+                currentIndex = (currentIndex + 1) % foodDishList.size
+                listState.animateScrollToItem(currentIndex)
+            }
         }
     }
 
@@ -313,12 +317,16 @@ fun FeaturedList(foodDishList: List<FoodDish>) {
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            items(foodDishList.size) { index ->
-                FeaturedDishes(foodDishList[index])
+            items(foodDishList, key = { it.id }) { dish ->
+                FeaturedDishes(dish)
             }
         }
 
-        // Dot Indicator
+        // Dot Indicator (uses firstVisibleItemIndex)
+        val visibleIndex by remember {
+            derivedStateOf { listState.firstVisibleItemIndex }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -326,7 +334,7 @@ fun FeaturedList(foodDishList: List<FoodDish>) {
             horizontalArrangement = Arrangement.Center
         ) {
             repeat(foodDishList.size) { index ->
-                val isSelected = currentIndex == index
+                val isSelected = visibleIndex == index
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
