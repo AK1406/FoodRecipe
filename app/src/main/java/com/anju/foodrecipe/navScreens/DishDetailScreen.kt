@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -60,6 +62,7 @@ import com.anju.foodrecipe.R
 import com.anju.foodrecipe.model.FoodDish
 import com.anju.foodrecipe.viewmodel.DishesViewModel
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Divider
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 
 
@@ -68,6 +71,7 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: DishesViewModel) {
     val dish = viewModel.getDishDetail(dishId)
     val sheetScaffoldState = rememberBottomSheetScaffoldState()
+    val foodDishes = viewModel.foodDishList
 
     val nutrientDrawableMap = mapOf(
         "calories" to R.drawable.calories,
@@ -87,7 +91,7 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
         sheetPeekHeight = 320.dp,
         sheetContent = {
             dish?.let {
-                BottomSheetContent(it, nutrientInfo)
+                BottomSheetContent(it, nutrientInfo,foodDishes)
             }
         },
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -158,77 +162,243 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
 @Composable
 fun BottomSheetContent(
     dishDetail: FoodDish,
-    nutrientInfo: Map<Int, Map<String, String>>
+    nutrientInfo: Map<Int, Map<String, String>>,
+    foodDishes: List<FoodDish>
 ) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(16.dp)
-    )
-    {
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = dishDetail.dishName,
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.wrapContentWidth()
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.clock),
+                        contentDescription = "time to cook",
+                        modifier = Modifier.size(22.dp),
+                        colorFilter = ColorFilter.tint(colorResource(R.color.light_grey))
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = dishDetail.cookingTime,
+                        style = TextStyle(
+                            fontSize = 14.sp,
+                            color = colorResource(R.color.light_grey)
+                        )
+                    )
+                }
+            }
+        }
+
+        item {
+            ExpandableText(dishDetail.detail, 2)
+        }
+
+        item {
+            NutrientsInfo(nutrientInfo)
+        }
+
+        item {
+            TabsOptions(dishDetail)
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(
+                onClick = { /* Add to cart logic */ },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
+            ) {
+                Text(
+                    "Add to cart",
+                    style = TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Divider(
+                color = Color.LightGray,
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Creator(foodDishes.filter { it.cookName == dishDetail.cookName})
+        }
+    }
+}
+
+@Composable
+fun Creator(dish: List<FoodDish>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+
+        Text(
+            "Creator",
+            style = TextStyle(
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Profile row
         Row(
-            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = dishDetail.dishName,
-                style = TextStyle(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(dish[0].cookProfile)
+                    .crossfade(true)
+                    .error(R.drawable.avtar)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = dish[0].cookName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .border(
+                        width = 1.dp,
+                        color = colorResource(R.color.authScreenBgColor),
+                        shape = CircleShape
+                    )
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.wrapContentWidth()
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(1f)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.clock),
-                    contentDescription = "time to cook",
-                    modifier = Modifier.size(22.dp),
-                    colorFilter = ColorFilter.tint(colorResource(R.color.light_grey))
-                )
-                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = dishDetail.cookingTime,
+                    text = dish[0].cookName,
                     style = TextStyle(
-                        fontSize = 14.sp,
-                        color = colorResource(R.color.light_grey)
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Food Creator", // or dish[0].cookDesc if available
+                    style = TextStyle(
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-        ExpandableText(dishDetail.detail, 2)
-        Spacer(modifier = Modifier.height(10.dp))
-        NutrientsInfo(nutrientInfo)
-        Spacer(modifier = Modifier.height(10.dp))
-        TabsOptions(dishDetail)
         Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = {}, modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
+
+        // Related Recipes section
+        Text(
+            text = "Related Recipes",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+        CreatorDishList(dish)
+    }
+}
+
+
+
+@Composable
+fun CreatorDishList(popularDishes: List<FoodDish>) {
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        items(popularDishes.size) { item ->
+            CreatorDishListItem(popularDishes[item])
+        }
+
+
+    }
+}
+
+@Composable
+fun CreatorDishListItem(item: FoodDish) {
+    Card(
+        modifier = Modifier
+            .width(120.dp),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(item.dishImage)
+                    .crossfade(true)
+                    .error(R.drawable.taco)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = item.dishName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.width(80.dp)
+                    .height(74.dp)
+                    .clip(RoundedCornerShape(10.dp))
+            )
+
             Text(
-                "Add to cart",
+                "${item.dishName}",
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
-                    color = Color.White
+                    fontWeight = FontWeight.Normal,
+                    color = Color.Black
                 )
             )
         }
     }
 }
+
 
 @Composable
 fun ExpandableText(dishDesc: String?, minimizedMaxLine: Int) {
@@ -331,7 +501,6 @@ fun NutrientsInfo(nutrients: Map<Int, Map<String, String>>) {
         }
     }
 }
-
 
 
 @Composable
@@ -524,17 +693,20 @@ fun QuantityButton(text: String, colorResId: Int) {
 
 
 @Composable
-fun IngredientsList(ingList: List<Map<String,String>>,modifier: Modifier = Modifier) {
-    LazyColumn(
+fun IngredientsList(
+    ingList: List<Map<String, String>>,
+    modifier: Modifier = Modifier
+) {
+    Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(ingList.size) { item ->
-            IngredientListItem(ingList[item])
+        ingList.forEach { item ->
+            IngredientListItem(item)
         }
-
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
