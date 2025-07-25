@@ -134,7 +134,7 @@ fun ContentScreen(
 ) {
     when (selectedIdx) {
         0 -> HomeScreen(modifier,dishesViewModel)
-        1 -> SearchRecipeScreen(modifier)
+        1 -> SearchRecipeScreen(modifier,dishesViewModel)
         2 -> DishDetailScreen(modifier)
         3 -> UserAccountScreen(modifier)
     }

@@ -43,7 +43,7 @@ fun AppNavigation(
             BottomNavigation(modifier,dishesViewModel)
         }
         composable("search_recipe") {
-            SearchRecipeScreen(modifier)
+            SearchRecipeScreen(modifier,dishesViewModel)
         }
         composable("dish_detail") {
             DishDetailScreen(modifier)

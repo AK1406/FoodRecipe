@@ -14,4 +14,5 @@ data class FoodDish(
     val protein: String?="",
     val carbs: String?="",
     val fat: String?="",
+    val rating: Float?=0f,
 )

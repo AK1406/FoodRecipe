@@ -17,15 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +32,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,12 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,85 +53,75 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anju.foodrecipe.R
+import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.EditorChoiceDish
-import com.anju.foodrecipe.model.PopularDishesModel
+import com.anju.foodrecipe.model.FoodDish
+import com.anju.foodrecipe.viewmodel.DishesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchRecipeScreen(modifier: Modifier = Modifier) {
+fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
+    val categoryList = viewModel.categoryList
+    val foodDishes = viewModel.foodDishList
+    var selFoodCat by remember { mutableStateOf("") }
 
-    Box(
+
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White,
-                        colorResource(R.color.lightest_grey)
-                    ) // From top to bottom
+                    colors = listOf(Color.White, colorResource(R.color.lightest_grey))
                 )
             )
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
+        item {
             Toolbar()
-            Spacer(modifier = Modifier.height(15.dp))
+        }
+
+        item {
             SearchDish()
-            Spacer(modifier = Modifier.height(10.dp))
-            DishCategories()
-            Spacer(modifier = Modifier.height(20.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Popular Recipes",
-                    style = TextStyle(
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "View all",
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = colorResource(R.color.authScreenBgColor)
-                    ),
-                    modifier = Modifier.padding(0.dp, 0.dp, 16.dp, 0.dp)
-                )
+        }
+
+        item {
+            DishCategories(categoryList){selCat->
+                selFoodCat = selCat
             }
-            Spacer(modifier = Modifier.height(15.dp))
-            DishList()
-            Spacer(modifier = Modifier.height(30.dp))
+        }
+
+        item {
             Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Editor's choice",
-                    style = TextStyle(
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                )
+                Text("Popular Recipes", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "View all",
-                    style = TextStyle(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = colorResource(R.color.authScreenBgColor)
-                    ),
-                    modifier = Modifier.padding(0.dp, 0.dp, 16.dp, 0.dp)
-                )
+                Text("View all", fontSize = 12.sp, color = colorResource(R.color.authScreenBgColor))
             }
-            Spacer(modifier = Modifier.height(15.dp))
-            EditorChoiceDishList()
+        }
+
+        item {
+            DishList(foodDishes.filter { it.type == selFoodCat })
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text("Editor's Choice", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.weight(1f))
+                Text("View all", fontSize = 12.sp, color = colorResource(R.color.authScreenBgColor))
+            }
+        }
+
+        val dishList = listOf(
+            EditorChoiceDish("Easy homemade beef burger", "James Spader"),
+            EditorChoiceDish("Blueberry with egg for breakfast", "James Spader")
+        )
+
+        items(dishList.size) { index ->
+            EditorChoiceListItem(dishList[index])
         }
     }
-
-
 }
+
 
 
 @Composable
@@ -183,21 +168,30 @@ fun SearchDish() {
 }
 
 @Composable
-fun DishCategories() {
-    val categoryList = listOf<String>("Breakfast", "Lunch", "Snacks", "Dinner")
-    var selectedCat by remember { mutableStateOf(categoryList[0]) }
+fun DishCategories(foodCategoryList: List<Category>, selType: (String) -> Unit) {
+    if (foodCategoryList.isEmpty()) return
+
+    val categoryList = foodCategoryList.map { it.name }
+    var selectedCat by remember { mutableStateOf(categoryList.first()) }
+
     LazyRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(categoryList.size) { cat ->
+        items(categoryList) { categoryName ->
             FilterChip(
-                selected = selectedCat == categoryList[cat],
-                onClick = { selectedCat = categoryList[cat] },
+                selected = selectedCat == categoryName,
+                onClick = {
+                    selectedCat = categoryName
+                    selType(selectedCat)
+                },
                 label = {
                     Text(
-                        text = categoryList[cat].toString(),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                        text = categoryName,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        maxLines = 1
                     )
                 },
                 shape = RoundedCornerShape(30.dp),
@@ -214,21 +208,14 @@ fun DishCategories() {
 }
 
 @Composable
-fun DishList() {
-    val featuredItems =
-        listOf<PopularDishesModel>(
-            PopularDishesModel("Healthy Taco Salad with fresh vegetable", "120 Kcal", "20 mins"),
-            PopularDishesModel("Healthy Taco Salad with fresh vegetable", "120 Kcal", "20 mins"),
-            PopularDishesModel("Healthy Taco Salad with fresh vegetable", "120 Kcal", "20 mins"),
-            PopularDishesModel("Healthy Taco Salad with fresh vegetable", "120 Kcal", "20 mins"),
-        )
+fun DishList(popularDishes: List<FoodDish>) {
 
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        items(featuredItems.size) { item ->
-            DishListItem(featuredItems[item])
+        items(popularDishes.size) { item ->
+            DishListItem(popularDishes[item])
         }
 
 
@@ -236,7 +223,7 @@ fun DishList() {
 }
 
 @Composable
-fun DishListItem(item: PopularDishesModel) {
+fun DishListItem(item: FoodDish) {
     Card(
         modifier = Modifier
             .width(130.dp),
@@ -296,7 +283,7 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(R.drawable.egg), "Dish image",
+                painter = painterResource(R.drawable.egg_avacado), "Dish image",
                 modifier = Modifier
                     .width(100.dp)
                     .height(84.dp)
@@ -390,5 +377,5 @@ fun EditorChoiceDishList() {
 @Preview(showBackground = true)
 @Composable
 private fun SearchDishScreenPreview() {
-    SearchRecipeScreen()
+    //SearchRecipeScreen()
 }
