@@ -7,7 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.FoodDish
+import com.anju.foodrecipe.model.UserModel
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 
 class DishesViewModel : ViewModel() {
@@ -18,7 +20,12 @@ class DishesViewModel : ViewModel() {
     var foodDishList by mutableStateOf<List<FoodDish>>(emptyList())
         private set
 
+    var userInfo by mutableStateOf(UserModel())
+        private set
+
+
     init {
+        getLoggedInUserDetails()
         fetchCategories()
         fetchFeaturedDishes()
     }
@@ -43,18 +50,51 @@ class DishesViewModel : ViewModel() {
             .collection("FoodDishes")
             .get()
             .addOnSuccessListener { snapshot ->
-                println("Documents fetched: ${snapshot.size()}")
-                snapshot.documents.forEach { doc ->
-                    println("Doc ID: ${doc.id} -> Data: ${doc.data}")
+                val result = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        val dish = doc.toObject(FoodDish::class.java)?.copy(
+                            isFeatured = doc.getBoolean("isFeatured") ?: false
+                        )
+                        dish
+                    } catch (e: Exception) {
+                        println("Error parsing document ${doc.id}: ${e.message}")
+                        null
+                    }
                 }
 
-                val result = snapshot.documents.mapNotNull { it.toObject(FoodDish::class.java) }
                 foodDishList = result
-                println("foodDishList: $foodDishList")
+                println("Final foodDishList: $foodDishList")
             }
-
             .addOnFailureListener { e ->
                 println("Failed to fetch food dishes: ${e.message}")
             }
     }
+
+
+    private fun getLoggedInUserDetails() {
+        val uid = Firebase.auth.currentUser?.uid
+
+        if (uid != null) {
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val user = document.toObject(UserModel::class.java)
+                        user?.let {
+                            userInfo = it
+                        }
+                        println("User fetched: $user")
+                    } else {
+                        println("No such user found with UID: $uid")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    println("Error fetching user: ${e.message}")
+                }
+        } else {
+            println("User is not logged in")
+        }
+    }
+
 }
