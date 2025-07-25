@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.AsyncImage
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.FoodDish
@@ -80,7 +81,7 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier
 ) {
     val userInfo = viewModel.userInfo
-    var selCategory by remember { mutableStateOf("") }
+    var selCategory by remember { mutableStateOf("breakfast") }
 
     Box(
         modifier = modifier
@@ -184,7 +185,7 @@ fun HomeScreenContent(
                 )
             }
             Spacer(modifier = Modifier.height(15.dp))
-            PopularDishList(foodDishes.filter { it.type.lowercase() == selCategory.lowercase() })
+            PopularDishList(foodDishes.filter { it.type.contains(selCategory.lowercase()) })
 
         }
 
@@ -363,7 +364,7 @@ fun Categories(foodCategoryList: List<Category>, selType: (String) -> Unit) {
                 selected = selectedCat == categoryName,
                 onClick = {
                     selectedCat = categoryName
-                    selType(selectedCat)
+                    selType(selectedCat.lowercase())
                 },
                 label = {
                     Text(
@@ -436,11 +437,12 @@ fun PopularDishes(item: FoodDish) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 "${item.dishName}",
                 modifier = Modifier.fillMaxWidth(),
-                maxLines = 2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 style = TextStyle(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -462,7 +464,7 @@ fun PopularDishes(item: FoodDish) {
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
-                    "${item.calories}",
+                    "${item.nutrients["calories"]}",
                     style = TextStyle(fontSize = 12.sp, color = colorResource(R.color.light_grey))
                 )
 

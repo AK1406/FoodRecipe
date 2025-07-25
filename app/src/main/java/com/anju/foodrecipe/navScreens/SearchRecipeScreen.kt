@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -52,6 +54,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.anju.foodrecipe.GlobalNavigation
 import com.anju.foodrecipe.R
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.EditorChoiceDish
@@ -63,7 +69,7 @@ import com.anju.foodrecipe.viewmodel.DishesViewModel
 fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
     val categoryList = viewModel.categoryList
     val foodDishes = viewModel.foodDishList
-    var selFoodCat by remember { mutableStateOf("") }
+    var selFoodCat by remember { mutableStateOf("breakfast") }
 
 
     LazyColumn(
@@ -86,7 +92,7 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
         }
 
         item {
-            DishCategories(categoryList){selCat->
+            DishCategories(categoryList) { selCat ->
                 selFoodCat = selCat
             }
         }
@@ -100,7 +106,7 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
         }
 
         item {
-            DishList(foodDishes.filter { it.type == selFoodCat })
+            DishList(foodDishes.filter { it.type.contains(selFoodCat.lowercase()) })
         }
 
         item {
@@ -111,17 +117,13 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
             }
         }
 
-        val dishList = listOf(
-            EditorChoiceDish("Easy homemade beef burger", "James Spader"),
-            EditorChoiceDish("Blueberry with egg for breakfast", "James Spader")
-        )
+        val dishList = foodDishes.filter { (it.rating ?: 0f) > 4.4 }
 
         items(dishList.size) { index ->
             EditorChoiceListItem(dishList[index])
         }
     }
 }
-
 
 
 @Composable
@@ -240,14 +242,19 @@ fun DishListItem(item: FoodDish) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Image(
-                painter = painterResource(R.drawable.taco),
-                contentDescription = "card bg",
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(item.dishImage)
+                    .crossfade(true)
+                    .error(R.drawable.taco)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = item.dishName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.width(100.dp)
                     .height(84.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(10.dp))
             )
 
             Text(
@@ -266,7 +273,7 @@ fun DishListItem(item: FoodDish) {
 }
 
 @Composable
-fun EditorChoiceListItem(editor: EditorChoiceDish) {
+fun EditorChoiceListItem(editor: FoodDish) {
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -282,12 +289,22 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
                 .padding(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(R.drawable.egg_avacado), "Dish image",
+
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(editor.dishImage)
+                    .crossfade(true)
+                    .error(R.drawable.taco)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = editor.dishName,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .width(100.dp)
                     .height(84.dp)
-                    .clip(RoundedCornerShape(16.dp)),
+                    .padding(5.dp)
+                    .clip(RoundedCornerShape(16.dp))
             )
             //Spacer(modifier = Modifier.weight(1f))
             Row(
@@ -316,18 +333,24 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.avtar),
-                            contentDescription = "Cook Image",
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(editor.cookProfile)
+                                .crossfade(true)
+                                .error(R.drawable.avtar)
+                                .diskCachePolicy(CachePolicy.ENABLED)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .build(),
+                            contentDescription = "cook image",
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(25.dp)
                                 .clip(CircleShape)
-                                .border(1.dp, Color.White, CircleShape),
-                            contentScale = ContentScale.Crop
+                                .border(1.dp, Color.White, CircleShape)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "James Spader",
+                            text = "${editor.cookName}",
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 color = colorResource(R.color.light_grey)
@@ -342,6 +365,7 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.Black)
                         .padding(5.dp)
+                        .clickable { GlobalNavigation.navController.navigate("dish_detail/${editor.id}") }
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
@@ -352,23 +376,6 @@ fun EditorChoiceListItem(editor: EditorChoiceDish) {
             }
 
 
-        }
-    }
-}
-
-@Composable
-fun EditorChoiceDishList() {
-    val dishList = listOf(
-        EditorChoiceDish("Easy homemade beef burger", "James Spader"),
-        EditorChoiceDish("Blueberry with egg for breakfast", "James Spader")
-    )
-
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        items(dishList.size) { item ->
-            EditorChoiceListItem(dishList[item])
         }
     }
 }

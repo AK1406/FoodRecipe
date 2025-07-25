@@ -14,32 +14,25 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
@@ -50,7 +43,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextLayoutResult
@@ -60,151 +53,152 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.anju.foodrecipe.R
-import com.anju.foodrecipe.model.DishDetailModel
-import com.anju.foodrecipe.model.IngredientModel
+import com.anju.foodrecipe.model.FoodDish
+import com.anju.foodrecipe.viewmodel.DishesViewModel
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.rememberBottomSheetScaffoldState
 
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DishDetailScreen(modifier: Modifier=Modifier) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: DishesViewModel) {
+    val dish = viewModel.getDishDetail(dishId)
+    val sheetScaffoldState = rememberBottomSheetScaffoldState()
 
-    val imageHeight = 450.dp
-    val sheetOffset = 240.dp
+    val nutrientDrawableMap = mapOf(
+        "calories" to R.drawable.calories,
+        "protein" to R.drawable.proteins,
+        "carbs" to R.drawable.carbs,
+        "fat" to R.drawable.fats
+    )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val nutrientInfo: Map<Int, Map<String, String>> = dish?.nutrients?.mapNotNull { (key, value) ->
+        nutrientDrawableMap[key.lowercase()]?.let { drawable ->
+            drawable to mapOf(key to value)
+        }
+    }?.toMap().orEmpty()
 
-        // Background image
-        Image(
-            painter = painterResource(R.drawable.dish_detail_bg),
-            contentDescription = "Dish Image",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(imageHeight),
-            contentScale = ContentScale.FillBounds
-        )
+    BottomSheetScaffold(
+        scaffoldState = sheetScaffoldState,
+        sheetPeekHeight = 320.dp,
+        sheetContent = {
+            dish?.let {
+                BottomSheetContent(it, nutrientInfo)
+            }
+        },
+        sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.Transparent
+    ) {
+        Box(modifier = modifier.fillMaxSize()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(dish?.dishImage)
+                    .crossfade(true)
+                    .error(R.drawable.taco)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = dish?.dishName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(450.dp),
+                contentScale = ContentScale.FillBounds
+            )
 
-
-        // White fade overlay from top
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.75f),
-                            Color.White.copy(alpha = 0.05f),
-                            Color.Transparent,
-                            Color.Transparent,
-                            Color.Transparent
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.75f),
+                                Color.White.copy(alpha = 0.05f),
+                                Color.Transparent
+                            )
                         )
                     )
-                )
-        )
-
-        // Top icons on image
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "Close",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White)
-                    .padding(6.dp)
             )
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                Icons.Outlined.FavoriteBorder,
-                contentDescription = "Favorite",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White)
-                    .padding(6.dp)
-            )
-        }
 
-        // Bottom sheet that overlaps image
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .offset(y = sheetOffset),
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color.White,
-            tonalElevation = 8.dp
-        ) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                verticalAlignment = Alignment.Top
             ) {
-                BottomSheetContent()
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White)
+                        .padding(6.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.White)
+                        .padding(6.dp)
+                )
             }
         }
     }
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetContent(
-    dishDetail: DishDetailModel = DishDetailModel(
-        "This Healthy Taco Salad is the universal delight of taco night This Healthy Taco Salad is the universal delight of taco night ",
-        "20 mins",
-        mapOf(
-            R.drawable.carbs to ("carbs" to "65g carbs"),
-            R.drawable.proteins to ("protien" to "20g protien"),
-            R.drawable.fats to ("fat" to "10g fat"),
-            R.drawable.kcal to ("calories" to "120 Kcal")
-        ),
-        mapOf(
-            "Tortilla Chips" to 2,
-            "Avocado" to 1,
-            "Red Cabbage" to 9,
-            "Peanuts" to 1,
-            "Red onions" to 2
-        ),
-        "James Spader",
-        "I'm the author and recipe developer.",
-        R.drawable.avtar
-    )
+    dishDetail: FoodDish,
+    nutrientInfo: Map<Int, Map<String, String>>
 ) {
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp, 16.dp, 16.dp, 0.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(16.dp)
+    )
+    {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Healthy Taco Salad",
+                text = dishDetail.dishName,
                 style = TextStyle(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
-                )
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.weight(1f))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.wrapContentWidth()
+            ) {
                 Image(
                     painter = painterResource(R.drawable.clock),
                     contentDescription = "time to cook",
                     modifier = Modifier.size(22.dp),
                     colorFilter = ColorFilter.tint(colorResource(R.color.light_grey))
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    "${dishDetail.cookingTime}",
+                    text = dishDetail.cookingTime,
                     style = TextStyle(
                         fontSize = 14.sp,
                         color = colorResource(R.color.light_grey)
@@ -212,12 +206,13 @@ fun BottomSheetContent(
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(10.dp))
-        ExpandableText(dishDetail.desc, 2)
+        ExpandableText(dishDetail.detail, 2)
         Spacer(modifier = Modifier.height(10.dp))
-        NutrientsInfo(dishDetail.nutrientsInfo)
+        NutrientsInfo(nutrientInfo)
         Spacer(modifier = Modifier.height(10.dp))
-        TabsOptions()
+        TabsOptions(dishDetail)
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = {}, modifier = Modifier.fillMaxWidth(),
@@ -278,24 +273,29 @@ fun ExpandableText(dishDesc: String?, minimizedMaxLine: Int) {
 }
 
 @Composable
-fun NutrientsInfo(nutrients: Map<Int, Pair<String, String>>?) {
-    if (nutrients.isNullOrEmpty()) return
+fun NutrientsInfo(nutrients: Map<Int, Map<String, String>>) {
+    if (nutrients.isEmpty()) return
 
-    val rows = nutrients.entries.chunked(2) // Split into rows of 2 items each
+    val rows = nutrients.entries.chunked(2) // Group into rows of 2 items
 
     Column(modifier = Modifier.fillMaxWidth()) {
         rows.forEach { rowItems ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 300.dp)
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                rowItems.forEach { (image, pairInfo) ->
+                rowItems.forEach { (imageResId, infoMap) ->
+                    val (label, value) = infoMap.entries.first()
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -305,14 +305,16 @@ fun NutrientsInfo(nutrients: Map<Int, Pair<String, String>>?) {
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = image),
-                                contentDescription = pairInfo.first,
+                                painter = painterResource(id = imageResId),
+                                contentDescription = label,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
+
                         Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
-                            text = pairInfo.second,
+                            text = value,
                             style = TextStyle(
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 14.sp,
@@ -322,7 +324,6 @@ fun NutrientsInfo(nutrients: Map<Int, Pair<String, String>>?) {
                     }
                 }
 
-                // Fill space if row has less than 2 items (only needed if odd count)
                 if (rowItems.size < 2) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -332,8 +333,9 @@ fun NutrientsInfo(nutrients: Map<Int, Pair<String, String>>?) {
 }
 
 
+
 @Composable
-fun TabsOptions() {
+fun TabsOptions(dishDetail: FoodDish) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf<String>("Ingredients", "Instructions")
     TabRow(
@@ -393,21 +395,24 @@ fun TabsOptions() {
     }
     Spacer(modifier = Modifier.height(15.dp))
     when (selectedTab) {
-        0 -> TabContent1()
+        0 -> TabContent1(dishDetail.ingredients)
         1 -> TabContent2()
     }
 }
 
 
 @Composable
-fun TabContent1() {
+fun TabContent1(ingredients: List<Map<String, String>>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        IngredientsList()
+        IngredientsList(
+            ingredients,
+            modifier = Modifier
+        )
     }
 }
 
@@ -419,7 +424,8 @@ fun TabContent2() {
 }
 
 @Composable
-fun IngredientListItem(item: IngredientModel) {
+fun IngredientListItem(item: Map<String, String>) {
+    println("item: $item")
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -444,18 +450,25 @@ fun IngredientListItem(item: IngredientModel) {
                         .background(colorResource(R.color.lightest_grey)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(item.ingImage),
-                        contentDescription = "Ingredient Image",
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(item["image"])
+                            .crossfade(true)
+                            .error(R.drawable.taco)
+                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .build(),
+                        contentDescription = item["name"],
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(30.dp) // smaller to fit inside padding
+                            .size(30.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "${item.ingName}",
+                    text = "${item["name"]}",
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.Black,
@@ -472,7 +485,7 @@ fun IngredientListItem(item: IngredientModel) {
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = item.qty.toString(),
+                    text = item["qty"].toString(),
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.Black
@@ -511,16 +524,9 @@ fun QuantityButton(text: String, colorResId: Int) {
 
 
 @Composable
-fun IngredientsList() {
-    val ingList = listOf<IngredientModel>(
-        IngredientModel(R.drawable.tortilla_chips, "Tortilla chips", 2),
-        IngredientModel(R.drawable.avacado, "Avacado", 1),
-        IngredientModel(R.drawable.red_cabbage, "Red cabbage", 1),
-        IngredientModel(R.drawable.peanuts, "Peanuts", 9),
-        IngredientModel(R.drawable.red_onion, "Red onion", 2)
-    )
+fun IngredientsList(ingList: List<Map<String,String>>,modifier: Modifier = Modifier) {
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(ingList.size) { item ->
@@ -533,5 +539,5 @@ fun IngredientsList() {
 @Preview(showBackground = true)
 @Composable
 private fun DishDetailPreview() {
-    DishDetailScreen()
+    //  DishDetailScreen()
 }

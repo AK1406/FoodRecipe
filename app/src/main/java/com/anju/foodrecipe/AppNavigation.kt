@@ -3,9 +3,11 @@ package com.anju.foodrecipe
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.anju.foodrecipe.navScreens.BottomNavigation
 import com.anju.foodrecipe.navScreens.DishDetailScreen
 import com.anju.foodrecipe.navScreens.SearchRecipeScreen
@@ -45,9 +47,16 @@ fun AppNavigation(
         composable("search_recipe") {
             SearchRecipeScreen(modifier,dishesViewModel)
         }
-        composable("dish_detail") {
-            DishDetailScreen(modifier)
+        composable(
+            route = "dish_detail/{dishId}",
+            arguments = listOf(navArgument("dishId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val dishId = backStackEntry.arguments?.getString("dishId")
+            dishId?.let {
+                DishDetailScreen(dishId = it,modifier,dishesViewModel)
+            }
         }
+
         composable("account") {
             UserAccountScreen(modifier)
         }

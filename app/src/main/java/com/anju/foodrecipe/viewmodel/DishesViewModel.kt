@@ -51,10 +51,43 @@ class DishesViewModel : ViewModel() {
             .get()
             .addOnSuccessListener { snapshot ->
                 val result = snapshot.documents.mapNotNull { doc ->
+                    println("Doc ID: ${doc.id}, type field: ${doc.get("type")}")
                     try {
+                        val typeList: List<String> = when (val typeField = doc.get("type")) {
+                            is String -> listOf(typeField)
+                            is List<*> -> typeField.filterIsInstance<String>()
+                            else -> emptyList()
+                        }
+                        val ingredients: List<Map<String, String>> =
+                            (doc.get("ingredients") as? List<Map<*, *>>)?.mapNotNull { rawMap ->
+                                rawMap.entries
+                                    .mapNotNull { entry ->
+                                        val key = entry.key as? String
+                                        val value = entry.value as? String
+                                        if (key != null && value != null) key to value else null
+                                    }
+                                    .toMap()
+                                    .takeIf { it.isNotEmpty() }
+                            } ?: emptyList()
+
+
                         val dish = doc.toObject(FoodDish::class.java)?.copy(
-                            isFeatured = doc.getBoolean("isFeatured") ?: false
+                            isFeatured = doc.getBoolean("isFeatured") ?: false,
+                            detail = doc.getString("detail") ?: "no description",
+                            rating = when (val rawRating = doc.get("rating")) {
+                                is Number -> rawRating.toFloat()
+                                is String -> rawRating.toFloatOrNull() ?: 0f
+                                else -> 0f
+                            },
+                            nutrients = (doc.get("nutrients") as? Map<*, *>)?.mapNotNull {
+                                val key = it.key as? String
+                                val value = it.value as? String
+                                if (key != null && value != null) key to value else null
+                            }?.toMap() ?: emptyMap(),
+                            ingredients = ingredients,
+                            type = typeList
                         )
+
                         dish
                     } catch (e: Exception) {
                         println("Error parsing document ${doc.id}: ${e.message}")
@@ -95,6 +128,11 @@ class DishesViewModel : ViewModel() {
         } else {
             println("User is not logged in")
         }
+    }
+
+
+    fun getDishDetail(dishId: String): FoodDish? {
+        return foodDishList.find { it.id == dishId }
     }
 
 }
