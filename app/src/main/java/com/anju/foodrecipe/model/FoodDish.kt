@@ -8,6 +8,10 @@ data class FoodDish(
     val cookName: String = "",
     val cookProfile: String = "",
     val cookingTime: String = "",
-    val isFeatured: Boolean = false,
-    val type: String = ""
+    var isFeatured: Boolean = false,
+    val type: String = "",
+    val calories: String?="",
+    val protein: String?="",
+    val carbs: String?="",
+    val fat: String?="",
 )
