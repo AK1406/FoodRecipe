@@ -71,7 +71,9 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
     LaunchedEffect(featuredDishes) {
         println("UI sees featured dishes: ${featuredDishes.map { it.dishName }}")
     }
-    HomeScreenContent(categoryList, featuredDishes, modifier)
+    if(featuredDishes.isNotEmpty()) {
+        HomeScreenContent(categoryList, featuredDishes, modifier)
+    }
 
 }
 
@@ -191,6 +193,21 @@ fun HomeScreenContent(
 
 @Composable
 fun FeaturedDishes(item: FoodDish) {
+    val context = LocalContext.current
+
+    val dishPainter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(item.dishImage)
+            .crossfade(true)
+    )
+
+    val cookPainter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(item.cookProfile)
+            .crossfade(true)
+
+    )
+
     Card(
         modifier = Modifier
             .width(264.dp)
@@ -198,9 +215,6 @@ fun FeaturedDishes(item: FoodDish) {
         shape = RoundedCornerShape(24.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background Image
-            val context = LocalContext.current
-
             Image(
                 painter = painterResource(R.drawable.card),
                 contentDescription = "card bg",
@@ -208,26 +222,16 @@ fun FeaturedDishes(item: FoodDish) {
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Dish Image
-            AsyncImage(
-                model  = remember(item.dishImage) {
-                    ImageRequest.Builder(context)
-                        .data(item.dishImage)
-                        .crossfade(true)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.ENABLED)
-                        .build()
-                },
+            Image(
+                painter = dishPainter,
                 contentDescription = item.dishName,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(140.dp)
                     .offset(x = 25.dp, y = (-40).dp)
-                    .align(Alignment.TopEnd),
-                placeholder = painterResource(R.drawable.white_noodles)
+                    .align(Alignment.TopEnd)
             )
 
-            // Content at bottom
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -250,16 +254,14 @@ fun FeaturedDishes(item: FoodDish) {
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Cook profile image
-                    AsyncImage(
-                        model = item.cookProfile,
+                    Image(
+                        painter = cookPainter,
                         contentDescription = "cook Image",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(25.dp)
                             .clip(CircleShape)
-                            .border(1.dp, Color.White, CircleShape),
-                        placeholder = painterResource(R.drawable.white_noodles)
+                            .border(1.dp, Color.White, CircleShape)
                     )
 
                     Spacer(modifier = Modifier.width(5.dp))
@@ -289,7 +291,6 @@ fun FeaturedDishes(item: FoodDish) {
     }
 }
 
-
 @Composable
 fun FeaturedList(foodDishList: List<FoodDish>) {
     if (foodDishList.isEmpty()) return
@@ -300,7 +301,6 @@ fun FeaturedList(foodDishList: List<FoodDish>) {
     LaunchedEffect(true) {
         while (true) {
             delay(2500)
-            // Only scroll when the user is not interacting
             if (!listState.isScrollInProgress) {
                 currentIndex = (currentIndex + 1) % foodDishList.size
                 listState.animateScrollToItem(currentIndex)
@@ -322,7 +322,6 @@ fun FeaturedList(foodDishList: List<FoodDish>) {
             }
         }
 
-        // Dot Indicator (uses firstVisibleItemIndex)
         val visibleIndex by remember {
             derivedStateOf { listState.firstVisibleItemIndex }
         }
