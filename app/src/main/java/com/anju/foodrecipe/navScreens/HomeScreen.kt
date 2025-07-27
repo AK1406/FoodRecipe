@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,7 @@ import kotlinx.coroutines.delay
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.anju.foodrecipe.GlobalNavigation
 import com.anju.foodrecipe.viewmodel.DishesViewModel
 import kotlinx.coroutines.launch
 
@@ -113,7 +115,9 @@ fun HomeScreenContent(
                 Icon(
                     Icons.Outlined.ShoppingCart,
                     contentDescription = "cart",
-                    modifier = Modifier.padding(0.dp, 0.dp, 16.dp, 0.dp)
+                    modifier = Modifier.padding(0.dp, 0.dp, 16.dp, 0.dp).clickable {
+                        GlobalNavigation.navController.navigate("cart")
+                    }
                 )
             }
             Spacer(modifier = Modifier.height(5.dp))

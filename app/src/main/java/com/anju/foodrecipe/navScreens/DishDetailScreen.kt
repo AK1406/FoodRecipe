@@ -64,6 +64,8 @@ import com.anju.foodrecipe.viewmodel.DishesViewModel
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Divider
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import com.anju.foodrecipe.GlobalNavigation
+import com.anju.foodrecipe.model.CartIngredientsModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,7 +93,7 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
         sheetPeekHeight = 320.dp,
         sheetContent = {
             dish?.let {
-                BottomSheetContent(it, nutrientInfo,foodDishes)
+                BottomSheetContent(it, nutrientInfo, foodDishes, viewModel)
             }
         },
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -163,8 +165,16 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
 fun BottomSheetContent(
     dishDetail: FoodDish,
     nutrientInfo: Map<Int, Map<String, String>>,
-    foodDishes: List<FoodDish>
+    foodDishes: List<FoodDish>,
+    viewModel: DishesViewModel
 ) {
+
+    val selectedIngredients = remember {
+        mutableStateListOf<Map<String, String>>().apply {
+            dishDetail?.ingredients?.let { addAll(it) }
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
@@ -223,13 +233,32 @@ fun BottomSheetContent(
         }
 
         item {
-            TabsOptions(dishDetail)
+            TabsOptions(dishDetail) { updatedIngList ->
+                selectedIngredients.clear()
+                selectedIngredients.addAll(updatedIngList)
+            }
         }
 
         item {
             Spacer(modifier = Modifier.height(20.dp))
             Button(
-                onClick = { /* Add to cart logic */ },
+                onClick = {
+                    var totalCost = 0.0
+                    selectedIngredients.forEach { item ->
+                        val qty = item["qty"]?.toFloatOrNull() ?: 0f
+                        val cost = item["cost"]?.toFloatOrNull() ?: 0f
+                        totalCost += qty * cost
+                    }
+                    val finalCart = CartIngredientsModel(
+                        dishDetail.id,
+                        dishDetail.dishName,
+                        dishDetail.dishImage,
+                        selectedIngredients,
+                        totalCost
+                    )
+                    viewModel.saveCartItem(finalCart)
+                    GlobalNavigation.navController.navigate("cart")
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
             ) {
@@ -249,7 +278,7 @@ fun BottomSheetContent(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(10.dp))
-            Creator(foodDishes.filter { it.cookName == dishDetail.cookName})
+            Creator(foodDishes.filter { it.cookName == dishDetail.cookName })
         }
     }
 }
@@ -335,7 +364,6 @@ fun Creator(dish: List<FoodDish>, modifier: Modifier = Modifier) {
 }
 
 
-
 @Composable
 fun CreatorDishList(popularDishes: List<FoodDish>) {
 
@@ -379,7 +407,8 @@ fun CreatorDishListItem(item: FoodDish) {
                     .build(),
                 contentDescription = item.dishName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.width(80.dp)
+                modifier = Modifier
+                    .width(80.dp)
                     .height(74.dp)
                     .clip(RoundedCornerShape(10.dp))
             )
@@ -504,7 +533,7 @@ fun NutrientsInfo(nutrients: Map<Int, Map<String, String>>) {
 
 
 @Composable
-fun TabsOptions(dishDetail: FoodDish) {
+fun TabsOptions(dishDetail: FoodDish, updatedIng: (MutableList<Map<String, String>>) -> Unit) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf<String>("Ingredients", "Instructions")
     TabRow(
@@ -564,14 +593,20 @@ fun TabsOptions(dishDetail: FoodDish) {
     }
     Spacer(modifier = Modifier.height(15.dp))
     when (selectedTab) {
-        0 -> TabContent1(dishDetail.ingredients)
+        0 -> TabContent1(dishDetail.ingredients) { updatedIngList ->
+            updatedIng(updatedIngList.toMutableList())
+        }
+
         1 -> TabContent2()
     }
 }
 
 
 @Composable
-fun TabContent1(ingredients: List<Map<String, String>>) {
+fun TabContent1(
+    ingredients: List<Map<String, String>>,
+    updatedIng: (List<Map<String, String>>) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -581,7 +616,9 @@ fun TabContent1(ingredients: List<Map<String, String>>) {
         IngredientsList(
             ingredients,
             modifier = Modifier
-        )
+        ) { updatedIngList ->
+            updatedIng(updatedIngList)
+        }
     }
 }
 
@@ -593,8 +630,15 @@ fun TabContent2() {
 }
 
 @Composable
-fun IngredientListItem(item: Map<String, String>) {
-    println("item: $item")
+fun IngredientListItem(
+    item: Map<String, String>,
+    updatedIngredient: (Map<String, String>) -> Unit
+) {
+    val ingredient = item.toMutableMap()
+    var itemQty by remember {
+        mutableStateOf(item["qty"]?.toIntOrNull()?.coerceIn(1, 20) ?: 1)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -629,15 +673,14 @@ fun IngredientListItem(item: Map<String, String>) {
                             .build(),
                         contentDescription = item["name"],
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(30.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "${item["name"]}",
+                    text = item["name"].orEmpty(),
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.Black,
@@ -647,29 +690,43 @@ fun IngredientListItem(item: Map<String, String>) {
             }
 
             // Qty Controls
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                QuantityButton("-", R.color.authScreenBgColor)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                QuantityButton("-", R.color.authScreenBgColor, {
+                    if (itemQty > 1) {
+                        itemQty -= 1
+                        ingredient["qty"] = itemQty.toString()
+                        updatedIngredient(ingredient)
+                    }
+                }, {})
+
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = item["qty"].toString(),
-                    style = TextStyle(
-                        fontSize = 18.sp,
-                        color = Color.Black
-                    )
+                    text = itemQty.toString(),
+                    style = TextStyle(fontSize = 18.sp, color = Color.Black)
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
-                QuantityButton("+", R.color.authScreenBgColor)
+
+                QuantityButton("+", R.color.authScreenBgColor, {}, {
+                    if (itemQty < 20) {
+                        itemQty += 1
+                        ingredient["qty"] = itemQty.toString()
+                        updatedIngredient(ingredient)
+                    }
+                })
             }
         }
     }
 }
 
 @Composable
-fun QuantityButton(text: String, colorResId: Int) {
+fun QuantityButton(
+    text: String,
+    colorResId: Int,
+    minusClicked: (Boolean) -> Unit,
+    plusClicked: (Boolean) -> Unit
+) {
     Box(
         modifier = Modifier
             .size(24.dp)
@@ -677,7 +734,14 @@ fun QuantityButton(text: String, colorResId: Int) {
                 width = 1.dp,
                 color = colorResource(colorResId),
                 shape = RoundedCornerShape(8.dp)
-            ),
+            )
+            .clickable {
+                if (text == "-") {
+                    minusClicked(true)
+                } else if (text == "+") {
+                    plusClicked(true)
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -695,14 +759,20 @@ fun QuantityButton(text: String, colorResId: Int) {
 @Composable
 fun IngredientsList(
     ingList: List<Map<String, String>>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onUpdatedList: (List<Map<String, String>>) -> Unit
 ) {
+    val updatedList = remember { mutableStateListOf(*ingList.toTypedArray()) }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        ingList.forEach { item ->
-            IngredientListItem(item)
+        updatedList.forEachIndexed { index, item ->
+            IngredientListItem(item) { updatedItem ->
+                updatedList[index] = updatedItem
+                onUpdatedList(updatedList)
+            }
         }
     }
 }

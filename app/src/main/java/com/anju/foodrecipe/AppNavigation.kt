@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.anju.foodrecipe.navScreens.BottomNavigation
+import com.anju.foodrecipe.navScreens.CartScreen
 import com.anju.foodrecipe.navScreens.DishDetailScreen
 import com.anju.foodrecipe.navScreens.SearchRecipeScreen
 import com.anju.foodrecipe.navScreens.UserAccountScreen
@@ -33,19 +34,19 @@ fun AppNavigation(
 
     NavHost(navController = navController, startDestination = firstScreen, builder = {
         composable("auth") {
-            AuthScreen(modifier,navController,authViewModel)
+            AuthScreen(modifier, navController, authViewModel)
         }
         composable("login") {
-            LoginScreen(modifier,navController,authViewModel)
+            LoginScreen(modifier, navController, authViewModel)
         }
         composable("sign_up") {
-            SignUpScreen(modifier,navController,authViewModel)
+            SignUpScreen(modifier, navController, authViewModel)
         }
         composable("home") {
-            BottomNavigation(modifier,dishesViewModel)
+            BottomNavigation(modifier, dishesViewModel)
         }
         composable("search_recipe") {
-            SearchRecipeScreen(modifier,dishesViewModel)
+            SearchRecipeScreen(modifier, dishesViewModel)
         }
         composable(
             route = "dish_detail/{dishId}",
@@ -53,12 +54,15 @@ fun AppNavigation(
         ) { backStackEntry ->
             val dishId = backStackEntry.arguments?.getString("dishId")
             dishId?.let {
-                DishDetailScreen(dishId = it,modifier,dishesViewModel)
+                DishDetailScreen(dishId = it, modifier, dishesViewModel)
             }
         }
 
         composable("account") {
             UserAccountScreen(modifier)
+        }
+        composable("cart") {
+            CartScreen(modifier, dishesViewModel)
         }
 
     })

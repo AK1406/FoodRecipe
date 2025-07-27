@@ -2,15 +2,21 @@ package com.anju.foodrecipe.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.anju.foodrecipe.model.CartIngredientsModel
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.FoodDish
 import com.anju.foodrecipe.model.UserModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
 class DishesViewModel : ViewModel() {
 
@@ -21,6 +27,9 @@ class DishesViewModel : ViewModel() {
         private set
 
     var userInfo by mutableStateOf(UserModel())
+        private set
+
+    var savedCartItems by mutableStateOf<List<CartIngredientsModel>>(emptyList())
         private set
 
 
@@ -134,5 +143,36 @@ class DishesViewModel : ViewModel() {
     fun getDishDetail(dishId: String): FoodDish? {
         return foodDishList.find { it.id == dishId }
     }
+
+
+    fun saveCartItem(item: CartIngredientsModel) {
+        if (!savedCartItems.contains(item)) {
+            val updatedList = savedCartItems.toMutableList()
+            updatedList.add(item)
+            savedCartItems = updatedList
+        }
+        saveCartToFireStore(savedCartItems)
+    }
+
+    fun saveCartToFireStore(cartList: List<CartIngredientsModel>) {
+        // Generate unique document ID using date + UUID
+        val date = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val documentId = "cart_${date}_${UUID.randomUUID()}"
+
+        userInfo.uid?.let { uid ->
+            Firebase.firestore.collection("data")
+                .document("cart")
+                .collection(uid)
+                .document(documentId)
+                .set(mapOf("items" to cartList))
+                .addOnSuccessListener {
+                    Log.d("CartSave", "Cart items saved successfully")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("CartSave", "Failed to save cart items: ${e.message}")
+                }
+        }
+    }
+
 
 }
