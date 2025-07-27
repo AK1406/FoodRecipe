@@ -88,6 +88,7 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
         }
     }?.toMap().orEmpty()
 
+
     BottomSheetScaffold(
         scaffoldState = sheetScaffoldState,
         sheetPeekHeight = 320.dp,
@@ -168,6 +169,7 @@ fun BottomSheetContent(
     foodDishes: List<FoodDish>,
     viewModel: DishesViewModel
 ) {
+    var btnText by remember { mutableStateOf("Add to cart") }
 
     val selectedIngredients = remember {
         mutableStateListOf<Map<String, String>>().apply {
@@ -243,27 +245,34 @@ fun BottomSheetContent(
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    var totalCost = 0.0
-                    selectedIngredients.forEach { item ->
-                        val qty = item["qty"]?.toFloatOrNull() ?: 0f
-                        val cost = item["cost"]?.toFloatOrNull() ?: 0f
-                        totalCost += qty * cost
+                    if(btnText == "Go to cart") {
+                        GlobalNavigation.navController.navigate("cart")
                     }
-                    val finalCart = CartIngredientsModel(
-                        dishDetail.id,
-                        dishDetail.dishName,
-                        dishDetail.dishImage,
-                        selectedIngredients,
-                        totalCost
-                    )
-                    viewModel.saveCartItem(finalCart)
-                    GlobalNavigation.navController.navigate("cart")
+                    if(btnText == "Add to cart") {
+                        var totalCost = 0.0
+                        selectedIngredients.forEach { item ->
+                            val qty = item["qty"]?.toFloatOrNull() ?: 0f
+                            val cost = item["cost"]?.toFloatOrNull() ?: 0f
+                            totalCost += qty * cost
+                        }
+                        val finalCart = CartIngredientsModel(
+                            dishDetail.id,
+                            dishDetail.dishName,
+                            dishDetail.dishImage,
+                            selectedIngredients,
+                            totalCost
+                        )
+                        viewModel.saveCartItem(finalCart)
+                        btnText = "Go to cart"
+                    }
+
+
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
             ) {
                 Text(
-                    "Add to cart",
+                    btnText,
                     style = TextStyle(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp,

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.anju.foodrecipe.model.CartDocument
 import com.anju.foodrecipe.model.CartIngredientsModel
 import com.anju.foodrecipe.model.Category
 import com.anju.foodrecipe.model.FoodDish
@@ -37,6 +38,17 @@ class DishesViewModel : ViewModel() {
         getLoggedInUserDetails()
         fetchCategories()
         fetchFeaturedDishes()
+    }
+
+    fun callFetchCartItems(){
+        fetchCartItems() { cartItems ->
+            if (savedCartItems.isEmpty()) {
+                if(cartItems.isNotEmpty()) {
+                    savedCartItems = cartItems
+                }
+            }
+
+        }
     }
 
     private fun fetchCategories() {
@@ -160,9 +172,9 @@ class DishesViewModel : ViewModel() {
         val documentId = "cart_${date}_${UUID.randomUUID()}"
 
         userInfo.uid?.let { uid ->
-            Firebase.firestore.collection("data")
-                .document("cart")
-                .collection(uid)
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .collection("cart")
                 .document(documentId)
                 .set(mapOf("items" to cartList))
                 .addOnSuccessListener {
@@ -173,6 +185,26 @@ class DishesViewModel : ViewModel() {
                 }
         }
     }
+
+    fun fetchCartItems(onResult: (List<CartIngredientsModel>) -> Unit) {
+        userInfo.uid?.let { uid ->
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .collection("cart")
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    val cartItems = querySnapshot.documents.flatMap { doc ->
+                        doc.toObject(CartDocument::class.java)?.items ?: emptyList()
+                    }
+                    onResult(cartItems)
+                }
+                .addOnFailureListener { e ->
+                    Log.e("CartFetch", "Failed to fetch cart items: ${e.message}")
+                    onResult(emptyList())
+                }
+        }
+    }
+
 
 
 }

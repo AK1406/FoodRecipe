@@ -8,3 +8,7 @@ data class CartIngredientsModel(
     val ingredients: List<Map<String,String>> = emptyList(),
     var totalCost: Double = 0.0
 )
+
+data class CartDocument(
+    val items: List<CartIngredientsModel> = emptyList()
+)

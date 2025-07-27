@@ -51,13 +51,18 @@ fun CartScreen(
     modifier: Modifier = Modifier,
     viewModel: DishesViewModel
 ) {
-    val cartItems = viewModel.savedCartItems
+    var cartItems = viewModel.savedCartItems
     var payableAmt by remember { mutableStateOf(0.0) }
     val gstAmt = 15.0
     val handlingCharge = 10.0
 
     LaunchedEffect(cartItems) {
-        payableAmt = cartItems.sumOf { it.totalCost + gstAmt + handlingCharge }
+        if(cartItems.isEmpty()){
+            viewModel.callFetchCartItems()
+            cartItems = viewModel.savedCartItems
+        }else {
+            payableAmt = cartItems.sumOf { it.totalCost + gstAmt + handlingCharge }
+        }
     }
 
     Box(
@@ -67,7 +72,12 @@ fun CartScreen(
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 90.dp) // bottom padding for button space
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 90.dp
+                ) // bottom padding for button space
         ) {
             Text(
                 "Shop for ingredients", style = TextStyle(
@@ -120,7 +130,8 @@ fun CartScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Total ingredients: ${item.ingredients.size}", style = TextStyle(
+                                    "Total ingredients: ${item.ingredients.size}",
+                                    style = TextStyle(
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Normal,
                                         color = Color.Gray
@@ -155,22 +166,25 @@ fun CartScreen(
         }
 
         // Fixed button at bottom
-        Button(
-            onClick = {
-                // Handle payment
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
-        ) {
-            Text(
-                "Pay Rs $payableAmt", style = TextStyle(
-                    fontSize = 18.sp,
-                    color = Color.White
+        if (payableAmt > 0) {
+            Button(
+                onClick = {
+                    // Handle payment
+
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                colors = ButtonDefaults.buttonColors(colorResource(R.color.authScreenBgColor))
+            ) {
+                Text(
+                    "Pay Rs $payableAmt", style = TextStyle(
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
                 )
-            )
+            }
         }
     }
 }
