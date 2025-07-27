@@ -499,7 +499,7 @@ fun PopularDishes(item: FoodDish) {
 @Composable
 fun PopularDishList(foodDishList: List<FoodDish>) {
     LazyRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(foodDishList.size) { item ->

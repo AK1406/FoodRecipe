@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -117,10 +118,16 @@ fun BottomNavigation(
             }
         }
     ) { paddingValues ->
+        val topPadding = paddingValues.calculateTopPadding()
+        val bottomPadding = paddingValues.calculateBottomPadding()
+
         ContentScreen(
-            modifier = modifier.padding(paddingValues),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colorResource(R.color.lightest_grey))
+                .padding(top = topPadding, bottom = bottomPadding),
             selectedIdx = selectedItemIndex,
-            dishesViewModel
+            dishesViewModel = dishesViewModel
         )
     }
 }

@@ -80,8 +80,7 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
                     colors = listOf(Color.White, colorResource(R.color.lightest_grey))
                 )
             )
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(top = 16.dp, bottom = 0.dp, start = 16.dp)
     ) {
         item {
             Toolbar()
@@ -98,29 +97,45 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
         }
 
         item {
+            Spacer(modifier = Modifier.height(5.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text("Popular Recipes", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.weight(1f))
-                Text("View all", fontSize = 12.sp, color = colorResource(R.color.authScreenBgColor))
+                Text(
+                    "View all",
+                    fontSize = 12.sp,
+                    color = colorResource(R.color.authScreenBgColor),
+                    modifier = Modifier.padding(end = 16.dp)
+                )
             }
         }
 
         item {
+            Spacer(modifier = Modifier.height(16.dp))
             DishList(foodDishes.filter { it.type.contains(selFoodCat.lowercase()) })
         }
-
         item {
+            Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text("Editor's Choice", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.weight(1f))
-                Text("View all", fontSize = 12.sp, color = colorResource(R.color.authScreenBgColor))
+                Text(
+                    "View all",
+                    fontSize = 12.sp,
+                    color = colorResource(R.color.authScreenBgColor),
+                    modifier = Modifier.padding(end = 16.dp)
+                )
             }
         }
 
-        val dishList = foodDishes.filter { (it.rating ?: 0f) > 4.4 }
-
-        items(dishList.size) { index ->
-            EditorChoiceListItem(dishList[index])
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            val dishList = foodDishes.filter { (it.rating ?: 0f) > 4.4 }
+            Column {
+                dishList.forEach {
+                    EditorChoiceListItem(it)
+                }
+            }
         }
     }
 }
@@ -179,7 +194,7 @@ fun DishCategories(foodCategoryList: List<Category>, selType: (String) -> Unit) 
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(categoryList) { categoryName ->
@@ -252,7 +267,8 @@ fun DishListItem(item: FoodDish) {
                     .build(),
                 contentDescription = item.dishName,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.width(100.dp)
+                modifier = Modifier
+                    .width(100.dp)
                     .height(84.dp)
                     .clip(RoundedCornerShape(10.dp))
             )
@@ -276,7 +292,8 @@ fun DishListItem(item: FoodDish) {
 fun EditorChoiceListItem(editor: FoodDish) {
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(end = 16.dp, bottom = 16.dp),
         elevation = CardDefaults.elevatedCardElevation(2.dp),
         shape = RoundedCornerShape(15.dp),
         colors = CardDefaults.cardColors(
