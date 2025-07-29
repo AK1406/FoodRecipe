@@ -87,7 +87,7 @@ fun BottomNavigation(
                                     Icon(
                                         imageVector = icon!!,
                                         contentDescription = null,
-                                        tint = if (selectedItemIndex == index) Color(0xFF042628) else Color.Gray,
+                                        tint = if (selectedItemIndex == index) colorResource(R.color.authScreenBgColor) else Color.Gray,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }

@@ -136,7 +136,7 @@ class DishesViewModel : ViewModel() {
                     if (document.exists()) {
                         val user = document.toObject(UserModel::class.java)
                         user?.let {
-                            userInfo = it
+                            userInfo= it
                         }
                         println("User fetched: $user")
                     } else {

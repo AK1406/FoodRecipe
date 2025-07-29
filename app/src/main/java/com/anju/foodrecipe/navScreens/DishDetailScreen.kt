@@ -91,7 +91,7 @@ fun DishDetailScreen(dishId: String, modifier: Modifier = Modifier, viewModel: D
 
     BottomSheetScaffold(
         scaffoldState = sheetScaffoldState,
-        sheetPeekHeight = 320.dp,
+        sheetPeekHeight = 450.dp,
         sheetContent = {
             dish?.let {
                 BottomSheetContent(it, nutrientInfo, foodDishes, viewModel)

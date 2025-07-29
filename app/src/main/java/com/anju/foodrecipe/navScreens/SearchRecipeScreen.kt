@@ -143,14 +143,36 @@ fun SearchRecipeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel
 
 @Composable
 fun Toolbar() {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Icon(imageVector = Icons.Default.ArrowBack, "back")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+       /* Icon(
+            imageVector = Icons.Default.ArrowBack,
+            contentDescription = "Back",
+            modifier = Modifier
+                .size(28.dp)
+                .clickable {
+                    val canGoBack = GlobalNavigation.navController.previousBackStackEntry != null
+                    println("canGoBack:  $canGoBack")
+                    if (canGoBack) {
+                        GlobalNavigation.navController.popBackStack()
+                    }
+                }
+        )*/
+
         Text(
-            "Search", style = TextStyle(
+            text = "Search",
+            style = TextStyle(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
-            ), modifier = Modifier.fillMaxWidth()
+            ),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp)
         )
     }
 }
