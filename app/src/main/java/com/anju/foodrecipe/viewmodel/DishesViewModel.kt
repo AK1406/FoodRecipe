@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import com.anju.foodrecipe.model.CartDocument
 import com.anju.foodrecipe.model.CartIngredientsModel
 import com.anju.foodrecipe.model.Category
+import com.anju.foodrecipe.model.FavouriteDishesWrapper
 import com.anju.foodrecipe.model.FoodDish
 import com.anju.foodrecipe.model.UserModel
 import com.google.firebase.Firebase
@@ -33,6 +34,8 @@ class DishesViewModel : ViewModel() {
     var savedCartItems by mutableStateOf<List<CartIngredientsModel>>(emptyList())
         private set
 
+    var favouriteDishesList = mutableStateListOf<FoodDish>()
+        private set
 
     init {
         getLoggedInUserDetails()
@@ -40,10 +43,27 @@ class DishesViewModel : ViewModel() {
         fetchFeaturedDishes()
     }
 
-    fun callFetchCartItems(){
+    fun callFavouriteList() {
+        getFavouriteDishes(
+            onResult = { list ->
+                if (list.isNotEmpty()) {
+                    val updatedList = favouriteDishesList.toMutableList()
+                    updatedList.clear()
+                    favouriteDishesList.addAll(list)
+                    println("viemodel List: $favouriteDishesList")
+                }
+            },
+            onError = { e ->
+                Log.e("Favourite", "Failed to load favourite dishes: ${e.message}")
+            }
+        )
+    }
+
+
+    fun callFetchCartItems() {
         fetchCartItems() { cartItems ->
             if (savedCartItems.isEmpty()) {
-                if(cartItems.isNotEmpty()) {
+                if (cartItems.isNotEmpty()) {
                     savedCartItems = cartItems
                 }
             }
@@ -136,7 +156,7 @@ class DishesViewModel : ViewModel() {
                     if (document.exists()) {
                         val user = document.toObject(UserModel::class.java)
                         user?.let {
-                            userInfo= it
+                            userInfo = it
                         }
                         println("User fetched: $user")
                     } else {
@@ -205,6 +225,44 @@ class DishesViewModel : ViewModel() {
         }
     }
 
+    fun setFavouriteDish(dish: FoodDish) {
+        favouriteDishesList.add(dish)
+        userInfo.uid?.let { uid ->
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .collection("favourite")
+                .document("dishes")
+                .set(mapOf("dishes" to favouriteDishesList))
+                .addOnSuccessListener {
+                    Log.d("FavouriteUpdate", "Dish successfully added to favourites")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("FavouriteUpdate", "Failed to update favourites: ${e.message}")
+                }
+        }
+    }
+
+
+    fun getFavouriteDishes(onResult: (List<FoodDish>) -> Unit, onError: (Exception) -> Unit) {
+        userInfo.uid?.let { uid ->
+            Firebase.firestore.collection("users")
+                .document(uid)
+                .collection("favourite")
+                .document("dishes")
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val dishes = document.toObject(FavouriteDishesWrapper::class.java)
+                        onResult(dishes?.dishes ?: emptyList())
+                    } else {
+                        onResult(emptyList())
+                    }
+                }
+                .addOnFailureListener { e ->
+                    onError(e)
+                }
+        } ?: onError(Exception("User UID is null"))
+    }
 
 
 }

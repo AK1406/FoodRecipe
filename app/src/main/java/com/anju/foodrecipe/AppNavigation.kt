@@ -59,7 +59,7 @@ fun AppNavigation(
         }
 
         composable("account") {
-            UserAccountScreen(modifier)
+            UserAccountScreen(modifier,dishesViewModel)
         }
         composable("cart") {
             CartScreen(modifier, dishesViewModel)

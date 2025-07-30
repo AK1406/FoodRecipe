@@ -1,5 +1,6 @@
 package com.anju.foodrecipe.navScreens
 
+import android.util.Printer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Card
@@ -69,9 +71,30 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
+
     val categoryList = viewModel.categoryList
     val foodDishes = viewModel.foodDishList
-    HomeScreenContent(categoryList, foodDishes, viewModel,modifier)
+    LaunchedEffect(Unit) {
+        if (foodDishes.isNotEmpty()) {
+            viewModel.callFavouriteList()
+        }
+    }
+    val favFoodDishes = viewModel.favouriteDishesList
+    println("favFoodDishes: $favFoodDishes")
+    val favDishIds = favFoodDishes.filter { it.isFavourite }.map { it.id }.toSet()
+
+    val updatedFoodDishes = foodDishes.map { dish ->
+        if (dish.id in favDishIds) {
+            dish.copy(isFavourite = true)
+        } else {
+            dish
+        }
+    }
+
+    val fav = updatedFoodDishes.filter { it.isFavourite == true }
+
+    println("FoodDishes: $fav")
+    HomeScreenContent(categoryList, updatedFoodDishes, viewModel, modifier)
 
 }
 
@@ -115,9 +138,11 @@ fun HomeScreenContent(
                 Icon(
                     Icons.Outlined.ShoppingCart,
                     contentDescription = "cart",
-                    modifier = Modifier.padding(0.dp, 0.dp, 16.dp, 0.dp).clickable {
-                        GlobalNavigation.navController.navigate("cart")
-                    }
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 16.dp, 0.dp)
+                        .clickable {
+                            GlobalNavigation.navController.navigate("cart")
+                        }
                 )
             }
             Spacer(modifier = Modifier.height(5.dp))
@@ -162,7 +187,7 @@ fun HomeScreenContent(
                 )
             }
             Spacer(modifier = Modifier.height(15.dp))
-            Categories(categoryList){cat->
+            Categories(categoryList) { cat ->
                 selCategory = cat
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -189,7 +214,10 @@ fun HomeScreenContent(
                 )
             }
             Spacer(modifier = Modifier.height(15.dp))
-            PopularDishList(foodDishes.filter { it.type.contains(selCategory.lowercase()) })
+            PopularDishList(
+                foodDishes.filter { it.type.contains(selCategory.lowercase()) },
+                viewModel
+            )
 
         }
 
@@ -349,7 +377,6 @@ fun FeaturedList(foodDishList: List<FoodDish>) {
 }
 
 
-
 @Composable
 fun Categories(foodCategoryList: List<Category>, selType: (String) -> Unit) {
     if (foodCategoryList.isEmpty()) return
@@ -392,7 +419,9 @@ fun Categories(foodCategoryList: List<Category>, selType: (String) -> Unit) {
 
 
 @Composable
-fun PopularDishes(item: FoodDish) {
+fun PopularDishes(item: FoodDish, viewModel: DishesViewModel) {
+    println("item: $item")
+    var isFavorite by remember { mutableStateOf(item.isFavourite) }
     Card(
         modifier = Modifier
             .width(200.dp),
@@ -429,15 +458,21 @@ fun PopularDishes(item: FoodDish) {
                 )
 
                 Icon(
-                    Icons.Outlined.FavoriteBorder,
-                    contentDescription = "cook Image",
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorite Icon",
                     modifier = Modifier
                         .padding(10.dp)
                         .size(30.dp)
                         .clip(RoundedCornerShape(50))
                         .background(Color.White)
                         .padding(6.dp)
-                        .align(Alignment.TopEnd),
+                        .align(Alignment.TopEnd)
+                        .clickable {
+                            isFavorite = !isFavorite // Toggle state
+                            item.isFavourite = isFavorite
+                            viewModel.setFavouriteDish(item)
+                        },
+                    tint = if (isFavorite) colorResource(R.color.authScreenBgColor) else Color.Gray
                 )
             }
 
@@ -497,15 +532,16 @@ fun PopularDishes(item: FoodDish) {
 
 
 @Composable
-fun PopularDishList(foodDishList: List<FoodDish>) {
+fun PopularDishList(foodDishList: List<FoodDish>, viewModel: DishesViewModel) {
     LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         items(foodDishList.size) { item ->
-            PopularDishes(foodDishList[item])
+            PopularDishes(foodDishList[item], viewModel)
         }
-
 
     }
 }
