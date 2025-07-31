@@ -44,17 +44,17 @@ class DishesViewModel : ViewModel() {
     }
 
     fun callFavouriteList() {
+        println("callFavouriteList")
         getFavouriteDishes(
             onResult = { list ->
+                println("Favlist: $list")
                 if (list.isNotEmpty()) {
-                    val updatedList = favouriteDishesList.toMutableList()
-                    updatedList.clear()
+                    favouriteDishesList.clear()
                     favouriteDishesList.addAll(list)
-                    println("viemodel List: $favouriteDishesList")
                 }
             },
             onError = { e ->
-                Log.e("Favourite", "Failed to load favourite dishes: ${e.message}")
+                println("Failed to load favourite dishes: ${e.message}")
             }
         )
     }

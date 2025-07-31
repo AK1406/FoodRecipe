@@ -71,9 +71,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, viewModel: DishesViewModel) {
-
     val categoryList = viewModel.categoryList
     val foodDishes = viewModel.foodDishList
+
     LaunchedEffect(Unit) {
         if (foodDishes.isNotEmpty()) {
             viewModel.callFavouriteList()
